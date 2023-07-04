@@ -241,6 +241,12 @@ rule possibleToFullyWithdraw(address sender, uint256 amount) {
     satisfy balanceBefore == _token0.balanceOf(sender);
 }
 
+//// # Examples using the `satisfy` command ////////////////////////////////////
+////
+//// See [documentation][satisfy-docs] for a discussion of this example.
+////
+//// [satisfy-docs]: https://docs.certora.com/en/latest/docs/user-guide/satisfy.html)
+
 /// Check that there exists a case where a user deposit (transfer or mint) can
 /// be fully refunded (burning the liquidity provided).  Unfortunately, because
 /// we haven't required otherwise, the Prover can construct an example with
@@ -250,34 +256,91 @@ rule possibleToFullyWithdraw(address sender, uint256 amount) {
 /// finding a witness example. Note that it does not prove that every deposit
 /// can be fully withdrawn
 rule uninterestingPossibleToFullyWithdraw(address sender, uint256 amount) {
-    env eT0;
-    env eM;
-    setup(eM);
+    // record initial balance
     uint256 balanceBefore = _token0.balanceOf(sender);
 
-    require eM.msg.sender == sender;
-    require eT0.msg.sender == sender;
-    _token0.transfer(eT0, currentContract, amount);
-    uint256 amountOut0 = mint(eM,sender);
-    burnSingle(eM, _token0, amountOut0, sender);
+    // transfer `amount` tokens from `sender` to the pool
+    env eTransfer;
+    require eTransfer.msg.sender == sender;
+    _token0.transfer(eTransfer, currentContract, amount);
+
+    // mint and then immediately withdraw tokens for `sender`
+    env eMint;
+    require eMint.msg.sender == sender;
+    uint256 amountOut0 = mint(eMint,sender);
+
+    // withdraw tokens immediately after minting
+    env eBurn;
+    require eBurn.msg.sender == sender;
+    require eBurn.block.timestamp == eMint.block.timestamp;
+    burnSingle(eBurn, _token0, amountOut0, sender);
+
+    // demonstrate that it is possible that `sender`'s balance is unchanged
     satisfy balanceBefore == _token0.balanceOf(sender);
 }
 
-/// Fixed version of the `uninterestingPossibleToFullyWithdraw` example that
-/// ensures that the example has a nontrivial `amount`.
-rule possibleToFullyWithdraw(address sender, uint256 amount) {
-    require amount > 0; // added to reason about interesting cases 
+/// Fixed version of the `uninterestingPossibleToFullyWithdraw` rule that forces
+/// the Prover to choose a non-zero amount.
+///
+/// @dev the only change is the addition of the `require amount > 0`
+rule infeasiblePossibleToFullyWithdraw(address sender, uint256 amount) {
+    // force `amount` to be nonzero
+    require amount > 0;
 
-    env eT0;
-    env eM;
-    setup(eM);
+    // record initial balance
     uint256 balanceBefore = _token0.balanceOf(sender);
 
-    require eM.msg.sender == sender;
-    require eT0.msg.sender == sender;
-    _token0.transfer(eT0, currentContract, amount);
-    uint256 amountOut0 = mint(eM,sender);
-    burnSingle(eM, _token0, amountOut0, sender);
+    // transfer `amount` tokens from `sender` to the pool
+    env eTransfer;
+    require eTransfer.msg.sender == sender;
+    _token0.transfer(eTransfer, currentContract, amount);
+
+    // mint and then immediately withdraw tokens for `sender`
+    env eMint;
+    require eMint.msg.sender == sender;
+    uint256 amountOut0 = mint(eMint,sender);
+
+    // withdraw tokens immediately after minting
+    env eBurn;
+    require eBurn.msg.sender == sender;
+    require eBurn.block.timestamp == eMint.block.timestamp;
+    burnSingle(eBurn, _token0, amountOut0, sender);
+
+    // demonstrate that it is possible that `sender`'s balance is unchanged
+    satisfy balanceBefore == _token0.balanceOf(sender);
+}
+
+
+
+/// Fixed version of the `infeasiblePossibleToFullyWithdraw` example that
+/// ensures that the example has a feasible starting state
+///
+/// @dev the only change is the additional call to `setup(eMint)`
+rule possibleToFullyWithdraw(address sender, uint256 amount) {
+    // force `amount` to be nonzero
+    require amount > 0;
+
+    // record initial balance
+    uint256 balanceBefore = _token0.balanceOf(sender);
+
+    // transfer `amount` tokens from `sender` to the pool
+    env eTransfer;
+    require eTransfer.msg.sender == sender;
+    _token0.transfer(eTransfer, currentContract, amount);
+
+    // mint and then immediately withdraw tokens for `sender`
+    env eMint;
+    setup(eMint); // make additional setup assumptions
+    require eMint.msg.sender == sender;
+    uint256 amountOut0 = mint(eMint,sender);
+
+    // withdraw tokens immediately after minting
+    env eBurn;
+    require eBurn.msg.sender == sender;
+    require eBurn.block.timestamp == eMint.block.timestamp;
+    burnSingle(eBurn, _token0, amountOut0, sender);
+
+    // demonstrate that it is possible that `sender`'s balance is unchanged
     satisfy balanceBefore == _token0.balanceOf(sender);
 }
 
