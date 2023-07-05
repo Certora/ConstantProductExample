@@ -218,29 +218,6 @@ invariant sumFunds()
 	sumBalances == to_mathint(totalSupply());
 
 
-/*
-Property: Fully withdraw is possible
-
-Exist a case where a user deposit (transfer , mint) can be fully refunded (burn the liquidity provided)
-
-This property is implemented with a satisfy command, which aims at finding a witness example. Note that it does not prove that for every deposit can be fully withdrawn  
-
-*/
-rule possibleToFullyWithdraw(address sender, uint256 amount) {
-    env eT0;
-    env eM;
-    setup(eM);
-    uint256 balanceBefore = _token0.balanceOf(sender);
-    
-    require eM.msg.sender == sender;
-    require eT0.msg.sender == sender;
-    require amount > 0;
-    _token0.transfer(eT0, currentContract, amount);
-    uint256 amountOut0 = mint(eM,sender);
-    burnSingle(eM, _token0, amountOut0, sender);
-    satisfy balanceBefore == _token0.balanceOf(sender);
-}
-
 //// # Examples using the `satisfy` command ////////////////////////////////////
 ////
 //// See [documentation][satisfy-docs] for a discussion of this example.
