@@ -96,5 +96,5 @@ jobs:
           - {name: runFixed,  command: 'fixed.conf'}
           - {name: uninterestingSatsify,  command: 'fixed.conf --rule uninterestingPossibleToFullyWithdraw'}
           - {name: impossibleSatisfy,  command: 'fixed.conf --rule infeasiblePossibleToFullyWithdraw'}
-          - {name: satisfy,  command: 'fixed.conf --rule uninterestingPossibleToFullyWithdraw'}
+          - {name: satisfy,  command: 'fixed.conf --rule possibleToFullyWithdraw'}
 
